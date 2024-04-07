@@ -143,7 +143,8 @@ class Dejavu:
             self.db.insert_hashes(sid, hashes)
             self.db.set_song_fingerprinted(sid)
             self.__load_fingerprinted_audio_hashes()
-    def insert_fingerprints(self, fingerprints, song_name, url=None, type=None):
+    
+    def insert_fingerprints(self, hashes: List[Tuple[str, int]], song_name=None, url=None, type=None):
         """
         Insert fingerprints into the database.
 
@@ -152,9 +153,9 @@ class Dejavu:
         """
         song_hash = decoder.unique_hash(song_name)
         
-        sid = self.db.insert_song(song_name, song_hash, len(fingerprints), url, type)
+        sid = self.db.insert_song(song_name, song_hash, len(hashes), url, type)
 
-        self.db.insert_hashes(sid, fingerprints)
+        self.db.insert_hashes(sid, hashes)
         self.db.set_song_fingerprinted(sid)
         self.__load_fingerprinted_audio_hashes()
     
