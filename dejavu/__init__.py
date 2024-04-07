@@ -151,7 +151,7 @@ class Dejavu:
         :param fingerprints: list of tuples which represents the hash and the offset.
         :param song_name: name of the song.
         """
-        song_hash = decoder.unique_hash(song_name)
+        song_hash = decoder.generate_fingerprint_md5(hashes)
         
         sid = self.db.insert_song(song_name, song_hash, len(hashes), url, type)
 

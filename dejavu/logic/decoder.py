@@ -2,6 +2,7 @@ import fnmatch
 import os
 from hashlib import sha1
 from typing import List, Tuple
+from hashlib import md5
 
 import numpy as np
 from pydub import AudioSegment
@@ -9,6 +10,15 @@ from pydub.utils import audioop
 
 from dejavu.third_party import wavio
 
+
+def generate_fingerprint_md5(fingerprints):
+    # Convert the list of fingerprints into a string
+    fingerprint_str = '|'.join([f'{fp[0]}-{fp[1]}' for fp in fingerprints])
+    
+    # Generate the MD5 hash of the fingerprint string
+    md5_hash = md5(fingerprint_str.encode()).hexdigest()
+    
+    return md5_hash
 
 def unique_hash(file_path: str, block_size: int = 2**20) -> str:
     """ Small function to generate a hash to uniquely generate
