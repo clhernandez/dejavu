@@ -143,7 +143,21 @@ class Dejavu:
             self.db.insert_hashes(sid, hashes)
             self.db.set_song_fingerprinted(sid)
             self.__load_fingerprinted_audio_hashes()
+    def insert_fingerprints(self, fingerprints, song_name, url=None, type=None):
+        """
+        Insert fingerprints into the database.
 
+        :param fingerprints: list of tuples which represents the hash and the offset.
+        :param song_name: name of the song.
+        """
+        song_hash = decoder.unique_hash(song_name)
+        
+        sid = self.db.insert_song(song_name, song_hash, len(fingerprints), url, type)
+
+        self.db.insert_hashes(sid, fingerprints)
+        self.db.set_song_fingerprinted(sid)
+        self.__load_fingerprinted_audio_hashes()
+    
     def generate_fingerprints(self, samples: List[int], Fs=DEFAULT_FS) -> Tuple[List[Tuple[str, int]], float]:
         f"""
         Generate the fingerprints for the given sample data (channel).
