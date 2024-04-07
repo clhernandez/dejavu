@@ -4,7 +4,7 @@ import mysql.connector
 from mysql.connector.errors import DatabaseError
 
 from dejavu.base_classes.common_database import CommonDatabase
-from dejavu.config.settings import (FIELD_FILE_SHA1, FIELD_FINGERPRINTED,
+from dejavu.config.settings import (FIELD_FILE_SHA1, FIELD_FINGERPRINTED, FIELD_SONGTYPE,
                                     FIELD_HASH, FIELD_OFFSET, FIELD_SONG_ID,
                                     FIELD_SONGNAME, FIELD_TOTAL_HASHES,
                                     FINGERPRINTS_TABLENAME, SONGS_TABLENAME)
@@ -21,6 +21,7 @@ class MySQLDatabase(CommonDatabase):
         ,   `{FIELD_FINGERPRINTED}` TINYINT DEFAULT 0
         ,   `{FIELD_FILE_SHA1}` BINARY(20) NOT NULL
         ,   `{FIELD_TOTAL_HASHES}` INT NOT NULL DEFAULT 0
+        ,   `{FIELD_SONGTYPE}` VARCHAR(250) NOT NULL
         ,   `date_created` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         ,   `date_modified` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ,   CONSTRAINT `pk_{SONGS_TABLENAME}_{FIELD_SONG_ID}` PRIMARY KEY (`{FIELD_SONG_ID}`)
@@ -53,7 +54,7 @@ class MySQLDatabase(CommonDatabase):
     """
 
     INSERT_SONG = f"""
-        INSERT INTO `{SONGS_TABLENAME}` (`{FIELD_SONGNAME}`,`{FIELD_FILE_SHA1}`,`{FIELD_TOTAL_HASHES}`)
+        INSERT INTO `{SONGS_TABLENAME}` (`{FIELD_SONGNAME}`,`{FIELD_FILE_SHA1}`,`{FIELD_TOTAL_HASHES}`, `{FIELD_SONGTYPE}`)
         VALUES (%s, UNHEX(%s), %s);
     """
 
@@ -128,7 +129,7 @@ class MySQLDatabase(CommonDatabase):
         # the previous process.
         Cursor.clear_cache()
 
-    def insert_song(self, song_name: str, file_hash: str, total_hashes: int) -> int:
+    def insert_song(self, song_name: str, file_hash: str, total_hashes: int, type: str = None) -> int:
         """
         Inserts a song name into the database, returns the new
         identifier of the song.
@@ -139,7 +140,7 @@ class MySQLDatabase(CommonDatabase):
         :return: the inserted id.
         """
         with self.cursor() as cur:
-            cur.execute(self.INSERT_SONG, (song_name, file_hash, total_hashes))
+            cur.execute(self.INSERT_SONG, (song_name, file_hash, total_hashes,type))
             return cur.lastrowid
 
     def __getstate__(self):
