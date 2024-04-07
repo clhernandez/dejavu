@@ -153,7 +153,9 @@ class Dejavu:
         """
         song_hash = decoder.generate_fingerprint_md5(hashes)
         
-        sid = self.db.insert_song(song_name, song_hash, len(hashes), url, type)
+        print(f"Inserting {len(hashes)} hashes for {song_name}... {url}, {type}")
+        
+        sid = self.db.insert_song(song_name, song_hash, len(hashes), type)
 
         self.db.insert_hashes(sid, hashes)
         self.db.set_song_fingerprinted(sid)
