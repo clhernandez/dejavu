@@ -252,10 +252,11 @@ class Dejavu:
             pass
 
         song_name, extension = os.path.splitext(os.path.basename(file_name))
+        folder_name = os.path.basename(os.path.dirname(file_name))
 
         fingerprints, file_hash = Dejavu.get_file_fingerprints(file_name, limit, print_output=True)
 
-        return song_name, fingerprints, file_hash
+        return song_name, fingerprints, file_hash, folder_name
 
     @staticmethod
     def get_file_fingerprints(file_name: str, limit: int, print_output: bool = False):
