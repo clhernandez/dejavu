@@ -5,4 +5,12 @@ mp3
 *.mp3
 .DS_Store
 *.cnf
-vevn
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
