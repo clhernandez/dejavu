@@ -99,7 +99,7 @@ class Dejavu:
         # Loop till we have all of them
         while True:
             try:
-                song_name, hashes, file_hash = next(iterator)
+                song_name, hashes, file_hash, dir= next(iterator)
             except multiprocessing.TimeoutError:
                 continue
             except StopIteration:
@@ -109,7 +109,7 @@ class Dejavu:
                 # Print traceback because we can't reraise it here
                 traceback.print_exc(file=sys.stdout)
             else:
-                sid = self.db.insert_song(song_name, file_hash, len(hashes))
+                sid = self.db.insert_song(song_name, file_hash, len(hashes), dir)
 
                 self.db.insert_hashes(sid, hashes)
                 self.db.set_song_fingerprinted(sid)
