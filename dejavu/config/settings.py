@@ -62,16 +62,16 @@ CONNECTIVITY_MASK = 2
 DEFAULT_FS = 44100
 
 # Size of the FFT window, affects frequency granularity
-DEFAULT_WINDOW_SIZE = 4096
+DEFAULT_WINDOW_SIZE = 1024
 
 # Ratio by which each sequential window overlaps the last and the
 # next window. Higher overlap will allow a higher granularity of offset
 # matching, but potentially more fingerprints.
-DEFAULT_OVERLAP_RATIO = 0.5
+DEFAULT_OVERLAP_RATIO = 0.75
 
 # Degree to which a fingerprint can be paired with its neighbors. Higher values will
 # cause more fingerprints, but potentially better accuracy.
-DEFAULT_FAN_VALUE = 5  # 15 was the original value.
+DEFAULT_FAN_VALUE = 15  # 15 was the original value.
 
 # Minimum amplitude in spectrogram in order to be considered a peak.
 # This can be raised to reduce number of fingerprints, but can negatively
@@ -100,4 +100,4 @@ PEAK_SORT = True
 FINGERPRINT_REDUCTION = 20
 
 # Number of results being returned for file recognition
-TOPN = 2
+TOPN = 1
