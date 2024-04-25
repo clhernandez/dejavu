@@ -21,7 +21,7 @@ class PostgreSQLDatabase(CommonDatabase):
         ,   "{FIELD_FINGERPRINTED}" SMALLINT DEFAULT 0
         ,   "{FIELD_FILE_SHA1}" BYTEA
         ,   "{FIELD_TOTAL_HASHES}" INT NOT NULL DEFAULT 0
-        ,   "{FIELD_SONGTYPE}" VARCHAR(250) NOT NULL
+        ,   "{FIELD_SONGTYPE}" VARCHAR(250) NULL
         ,   "date_created" TIMESTAMP NOT NULL DEFAULT now()
         ,   "date_modified" TIMESTAMP NOT NULL DEFAULT now()
         ,   CONSTRAINT "pk_{SONGS_TABLENAME}_{FIELD_SONG_ID}" PRIMARY KEY ("{FIELD_SONG_ID}")
