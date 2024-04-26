@@ -3,7 +3,7 @@
 # DEJAVU JSON RESPONSE
 SONG_ID = "song_id"
 SONG_NAME = 'song_name'
-SONG_TYPE = 'song_type'
+SONG_TYPE = 'type'
 RESULTS = 'results'
 
 HASHES_MATCHED = 'hashes_matched_in_input'
