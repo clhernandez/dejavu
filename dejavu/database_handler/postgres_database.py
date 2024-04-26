@@ -101,6 +101,7 @@ class PostgreSQLDatabase(CommonDatabase):
         SELECT
             "{FIELD_SONG_ID}"
         ,   "{FIELD_SONGNAME}"
+        ,   "{FIELD_SONGTYPE}"
         ,   upper(encode("{FIELD_FILE_SHA1}", 'hex')) AS "{FIELD_FILE_SHA1}"
         ,   "{FIELD_TOTAL_HASHES}"
         ,   "date_created"
