@@ -14,7 +14,7 @@ from dejavu.config.settings import (DEFAULT_FS, DEFAULT_OVERLAP_RATIO,
                                     FINGERPRINTED_CONFIDENCE,
                                     FINGERPRINTED_HASHES, HASHES_MATCHED,
                                     INPUT_CONFIDENCE, INPUT_HASHES, OFFSET,
-                                    OFFSET_SECS, SONG_ID, SONG_NAME, TOPN)
+                                    OFFSET_SECS, SONG_ID, SONG_NAME, SONG_TYPE, TOPN)
 from dejavu.logic.fingerprint import fingerprint
 
 
@@ -215,6 +215,7 @@ class Dejavu:
             song = self.db.get_song_by_id(song_id)
 
             song_name = song.get(SONG_NAME, None)
+            song_type = song.get(SONG_TYPE, None)
             song_hashes = song.get(FIELD_TOTAL_HASHES, None)
             nseconds = round(float(offset) / DEFAULT_FS * DEFAULT_WINDOW_SIZE * DEFAULT_OVERLAP_RATIO, 5)
             hashes_matched = dedup_hashes[song_id]
@@ -222,6 +223,7 @@ class Dejavu:
             song = {
                 SONG_ID: song_id,
                 SONG_NAME: song_name.encode("utf8"),
+                SONG_TYPE: song_type,
                 INPUT_HASHES: queried_hashes,
                 FINGERPRINTED_HASHES: song_hashes,
                 HASHES_MATCHED: hashes_matched,
