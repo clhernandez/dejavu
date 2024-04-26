@@ -84,6 +84,7 @@ class PostgreSQLDatabase(CommonDatabase):
         SELECT
             "{FIELD_SONGNAME}"
         ,   upper(encode("{FIELD_FILE_SHA1}", 'hex')) AS "{FIELD_FILE_SHA1}"
+        ,   "{FIELD_SONGTYPE}"
         ,   "{FIELD_TOTAL_HASHES}"
         FROM "{SONGS_TABLENAME}"
         WHERE "{FIELD_SONG_ID}" = %s;
