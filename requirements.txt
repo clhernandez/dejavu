@@ -1,4 +1,4 @@
-pydub==0.23.1
+pydub==0.25.1
 PyAudio
 numpy
 scipy

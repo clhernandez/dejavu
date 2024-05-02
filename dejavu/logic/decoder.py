@@ -1,5 +1,6 @@
 import fnmatch
 import os
+import io
 from hashlib import sha1
 from typing import List, Tuple
 from hashlib import md5
@@ -38,6 +39,26 @@ def unique_hash(file_path: str, block_size: int = 2**20) -> str:
             if not buf:
                 break
             s.update(buf)
+    return s.hexdigest().upper()
+
+def unique_bytes_hash(data: bytes, block_size: int = 2**20) -> str:
+    """ Small function to generate a hash to uniquely generate
+    a byte array. Inspired by MD5 version here:
+    http://stackoverflow.com/a/1131255/712997
+
+    Works with large byte arrays.
+
+    :param data: byte array.
+    :param block_size: read block size.
+    :return: a hash in an hexagesimal string form.
+    """
+    s = sha1()
+    buffer = memoryview(data)
+    index = 0
+    while index < len(buffer):
+        buf = buffer[index:index+block_size]
+        s.update(buf)
+        index += block_size
     return s.hexdigest().upper()
 
 
@@ -113,3 +134,49 @@ def get_audio_name_from_path(file_path: str) -> str:
     :return: file name
     """
     return os.path.splitext(os.path.basename(file_path))[0]
+
+def read_from_buffer(buffer: bytes, frame_rate: int, sample_width: int, audio_channels: int, limit: int = None) -> Tuple[List[List[int]], int, str]:
+    """
+    Reads audio data from a buffer and returns the data contained within.
+    If the buffer contains a 24-bit wav file, wavio is used as a backup.
+
+    Can be optionally limited to a certain amount of seconds from the start
+    of the audio by specifying the `limit` parameter. This is the amount of
+    seconds from the start of the audio.
+
+    :param buffer: audio data buffer.
+    :param limit: number of seconds to limit.
+    :return: tuple list of (channels, sample_rate, content_file_hash).
+    """
+    try:
+        audiofile = AudioSegment.from_raw(file=io.BytesIO(buffer), sample_width=sample_width, frame_rate=frame_rate, channels=audio_channels)
+
+        if limit:
+            audiofile = audiofile[:limit * 1000]
+
+        if len(audiofile.raw_data) % 2:
+            temp_data = bytes(audiofile.raw_data)
+            temp_data = temp_data + b'\x00'
+            audiofile = AudioSegment.from_raw(file=io.BytesIO(temp_data), sample_width=sample_width, frame_rate=frame_rate, channels=audio_channels)
+        
+        data = np.frombuffer(audiofile.raw_data, np.int16)
+
+        channels = []
+        for chn in range(audiofile.channels):
+            channels.append(data[chn::audiofile.channels])
+
+        audiofile.frame_rate
+    except audioop.error:
+        _, _, audiofile = wavio.readwav(buffer)
+
+        if limit:
+            audiofile = audiofile[:limit * 1000]
+
+        audiofile = audiofile.T
+        audiofile = audiofile.astype(np.int16)
+
+        channels = []
+        for chn in audiofile:
+            channels.append(chn)
+
+    return channels, audiofile.frame_rate, unique_bytes_hash(buffer)
