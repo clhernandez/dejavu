@@ -11,8 +11,8 @@ class BufferRecognizer(BaseRecognizer):
     def __init__(self, dejavu):
         super().__init__(dejavu)
 
-    def recognize_buffer(self, content: bytes, frame_rate, sample_width, channels) -> Dict[str, any]:
-        channels, self.Fs, _ = decoder.read_from_buffer(content, frame_rate, sample_width, channels, self.dejavu.limit)
+    def recognize_buffer(self, content: bytes) -> Dict[str, any]:
+        channels, self.Fs, _ = decoder.read_from_buffer(content, self.dejavu.limit)
 
         t = time()
         matches, fingerprint_time, query_time, align_time = self._recognize(*channels)
@@ -28,5 +28,5 @@ class BufferRecognizer(BaseRecognizer):
 
         return results
 
-    def recognize(self, content: bytes, frame_rate, sample_width, channels) -> Dict[str, any]:
-        return self.recognize_buffer(content, frame_rate, sample_width, channels)
+    def recognize(self, content: bytes) -> Dict[str, any]:
+        return self.recognize_buffer(content)

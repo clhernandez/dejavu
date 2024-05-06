@@ -19,7 +19,7 @@ if __name__ == '__main__':
     files = os.listdir(folder_path)
     aac_files = []
     for file in files:
-        if file.endswith(".aac"):
+        if file.endswith(".wav"):
             aac_files.append(file)
             break
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
         # read binary file
         with open(filepath, "rb") as f:
             content = f.read()
-            results = djv.recognize(BufferRecognizer, content, 48000, 1, 2) 
+            results = djv.recognize(BufferRecognizer, content) 
             print(f"Buffer Results: {results}")
     
         results = djv.recognize(FileRecognizer, filepath)

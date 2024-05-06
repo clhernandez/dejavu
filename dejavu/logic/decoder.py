@@ -135,7 +135,7 @@ def get_audio_name_from_path(file_path: str) -> str:
     """
     return os.path.splitext(os.path.basename(file_path))[0]
 
-def read_from_buffer(buffer: bytes, frame_rate: int, sample_width: int, audio_channels: int, limit: int = None) -> Tuple[List[List[int]], int, str]:
+def read_from_buffer(buffer: bytes, limit: int = None) -> Tuple[List[List[int]], int, str]:
     """
     Reads audio data from a buffer and returns the data contained within.
     If the buffer contains a 24-bit wav file, wavio is used as a backup.
@@ -149,15 +149,10 @@ def read_from_buffer(buffer: bytes, frame_rate: int, sample_width: int, audio_ch
     :return: tuple list of (channels, sample_rate, content_file_hash).
     """
     try:
-        audiofile = AudioSegment.from_raw(file=io.BytesIO(buffer), sample_width=sample_width, frame_rate=frame_rate, channels=audio_channels)
+        audiofile = AudioSegment.from_file(io.BytesIO(buffer))
 
         if limit:
             audiofile = audiofile[:limit * 1000]
-
-        if len(audiofile.raw_data) % 2:
-            temp_data = bytes(audiofile.raw_data)
-            temp_data = temp_data + b'\x00'
-            audiofile = AudioSegment.from_raw(file=io.BytesIO(temp_data), sample_width=sample_width, frame_rate=frame_rate, channels=audio_channels)
         
         data = np.frombuffer(audiofile.raw_data, np.int16)
 
