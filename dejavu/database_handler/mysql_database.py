@@ -55,7 +55,7 @@ class MySQLDatabase(CommonDatabase):
 
     INSERT_SONG = f"""
         INSERT INTO `{SONGS_TABLENAME}` (`{FIELD_SONGNAME}`,`{FIELD_FILE_SHA1}`,`{FIELD_TOTAL_HASHES}`, `{FIELD_SONGTYPE}`)
-        VALUES (%s, UNHEX(%s), %s);
+        VALUES (%s, UNHEX(%s), %s, %s);
     """
 
     # SELECTS
