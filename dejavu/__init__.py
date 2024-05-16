@@ -135,8 +135,7 @@ class Dejavu:
         else:
             song_name, hashes, file_hash, dir = Dejavu._fingerprint_worker(
                 file_path,
-                self.limit,
-                song_name=song_name
+                self.limit
             )
             sid = self.db.insert_song(song_name, file_hash, len(hashes), dir)
 
