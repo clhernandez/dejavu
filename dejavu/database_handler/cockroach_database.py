@@ -1,13 +1,14 @@
 import queue
+from typing import List, Tuple
 
 import psycopg2
-from psycopg2.extras import DictCursor
+from psycopg2.extras import DictCursor, execute_values
 
 from dejavu.base_classes.common_database import CommonDatabase
 from dejavu.config.settings import (FIELD_FILE_SHA1, FIELD_FINGERPRINTED,FIELD_SONGTYPE,
                                     FIELD_HASH, FIELD_OFFSET, FIELD_SONG_ID,
                                     FIELD_SONGNAME, FIELD_TOTAL_HASHES,
-                                    FINGERPRINTS_TABLENAME, SONGS_TABLENAME)
+                                    FINGERPRINTS_TABLENAME, SONGS_TABLENAME, SCHEMA)
 
 
 class CockroachdbSQLDatabase(CommonDatabase):
@@ -15,12 +16,12 @@ class CockroachdbSQLDatabase(CommonDatabase):
 
     # CREATES
     CREATE_SONGS_TABLE = f"""
-        CREATE TABLE IF NOT EXISTS "{SONGS_TABLENAME}" (
-            "{FIELD_SONG_ID}" SERIAL
+        CREATE TABLE IF NOT EXISTS "{SCHEMA}"."{SONGS_TABLENAME}" (
+            "{FIELD_SONG_ID}" uuid DEFAULT uuid_generate_v4()
         ,   "{FIELD_SONGNAME}" VARCHAR(250) NOT NULL
         ,   "{FIELD_FINGERPRINTED}" SMALLINT DEFAULT 0
         ,   "{FIELD_FILE_SHA1}" BYTEA
-        ,   "{FIELD_TOTAL_HASHES}" INT NOT NULL DEFAULT 0
+        ,   "{FIELD_TOTAL_HASHES}" INT4 NOT NULL DEFAULT 0
         ,   "{FIELD_SONGTYPE}" VARCHAR(250) NULL
         ,   "date_created" TIMESTAMP NOT NULL DEFAULT now()
         ,   "date_modified" TIMESTAMP NOT NULL DEFAULT now()
@@ -30,35 +31,35 @@ class CockroachdbSQLDatabase(CommonDatabase):
     """
 
     CREATE_FINGERPRINTS_TABLE = f"""
-        CREATE TABLE IF NOT EXISTS "{FINGERPRINTS_TABLENAME}" (
-            "{FIELD_HASH}" BYTEA NOT NULL
-        ,   "{FIELD_SONG_ID}" INT NOT NULL
-        ,   "{FIELD_OFFSET}" INT NOT NULL
+        CREATE TABLE IF NOT EXISTS "{SCHEMA}"."{FINGERPRINTS_TABLENAME}" (
+            "{FIELD_HASH}" BYTEA PRIMARY KEY USING HASH
+        ,   "{FIELD_SONG_ID}" uuid NOT NULL
+        ,   "{FIELD_OFFSET}" INT4 NOT NULL
         ,   "date_created" TIMESTAMP NOT NULL DEFAULT now()
         ,   "date_modified" TIMESTAMP NOT NULL DEFAULT now()
         ,   CONSTRAINT "uq_{FINGERPRINTS_TABLENAME}" UNIQUE  ("{FIELD_SONG_ID}", "{FIELD_OFFSET}", "{FIELD_HASH}")
         ,   CONSTRAINT "fk_{FINGERPRINTS_TABLENAME}_{FIELD_SONG_ID}" FOREIGN KEY ("{FIELD_SONG_ID}")
-                REFERENCES "{SONGS_TABLENAME}"("{FIELD_SONG_ID}") ON DELETE CASCADE
+                REFERENCES "{SCHEMA}"."{SONGS_TABLENAME}"("{FIELD_SONG_ID}") ON DELETE CASCADE
         );
 
-        CREATE INDEX IF NOT EXISTS "ix_{FINGERPRINTS_TABLENAME}_{FIELD_HASH}" ON "{FINGERPRINTS_TABLENAME}"("{FIELD_HASH}") USING hash ;
+        CREATE INDEX IF NOT EXISTS "ix_{FINGERPRINTS_TABLENAME}_{FIELD_HASH}" ON "{SCHEMA}"."{FINGERPRINTS_TABLENAME}"("{FIELD_HASH}") USING hash ;
     """
 
     CREATE_FINGERPRINTS_TABLE_INDEX = f"""
-        CREATE INDEX "ix_{FINGERPRINTS_TABLENAME}_{FIELD_HASH}" ON "{FINGERPRINTS_TABLENAME}"("{FIELD_HASH}") USING hash ;
+        CREATE INDEX "ix_{FINGERPRINTS_TABLENAME}_{FIELD_HASH}" ON "{SCHEMA}"."{FINGERPRINTS_TABLENAME}"("{FIELD_HASH}") USING hash ;
     """
 
     # INSERTS (IGNORES DUPLICATES)
     INSERT_FINGERPRINT = f"""
-        INSERT INTO "{FINGERPRINTS_TABLENAME}" (
+        INSERT INTO "{SCHEMA}"."{FINGERPRINTS_TABLENAME}" (
                 "{FIELD_SONG_ID}"
             ,   "{FIELD_HASH}"
             ,   "{FIELD_OFFSET}")
-        VALUES (%s, decode(%s, 'hex'), %s) ON CONFLICT DO NOTHING;
+        VALUES %s ON CONFLICT DO NOTHING;
     """
 
     INSERT_SONG = f"""
-        INSERT INTO "{SONGS_TABLENAME}" ("{FIELD_SONGNAME}", "{FIELD_FILE_SHA1}","{FIELD_TOTAL_HASHES}","{FIELD_SONGTYPE}")
+        INSERT INTO "{SCHEMA}"."{SONGS_TABLENAME}" ("{FIELD_SONGNAME}", "{FIELD_FILE_SHA1}","{FIELD_TOTAL_HASHES}","{FIELD_SONGTYPE}")
         VALUES (%s, decode(%s, 'hex'), %s, %s)
         RETURNING "{FIELD_SONG_ID}";
     """
@@ -66,17 +67,17 @@ class CockroachdbSQLDatabase(CommonDatabase):
     # SELECTS
     SELECT = f"""
         SELECT "{FIELD_SONG_ID}", "{FIELD_OFFSET}"
-        FROM "{FINGERPRINTS_TABLENAME}"
+        FROM "{SCHEMA}"."{FINGERPRINTS_TABLENAME}"
         WHERE "{FIELD_HASH}" = decode(%s, 'hex');
     """
 
     SELECT_MULTIPLE = f"""
         SELECT upper(encode("{FIELD_HASH}", 'hex')), "{FIELD_SONG_ID}", "{FIELD_OFFSET}"
-        FROM "{FINGERPRINTS_TABLENAME}"
+        FROM "{SCHEMA}"."{FINGERPRINTS_TABLENAME}"
         WHERE "{FIELD_HASH}" IN (%s);
     """
 
-    SELECT_ALL = f'SELECT "{FIELD_SONG_ID}", "{FIELD_OFFSET}" FROM "{FINGERPRINTS_TABLENAME}";'
+    SELECT_ALL = f'SELECT "{FIELD_SONG_ID}", "{FIELD_OFFSET}" FROM "{SCHEMA}"."{FINGERPRINTS_TABLENAME}";'
 
     SELECT_SONG = f"""
         SELECT
@@ -84,15 +85,15 @@ class CockroachdbSQLDatabase(CommonDatabase):
         ,   upper(encode("{FIELD_FILE_SHA1}", 'hex')) AS "{FIELD_FILE_SHA1}"
         ,   "{FIELD_SONGTYPE}"
         ,   "{FIELD_TOTAL_HASHES}"
-        FROM "{SONGS_TABLENAME}"
+        FROM "{SCHEMA}"."{SONGS_TABLENAME}"
         WHERE "{FIELD_SONG_ID}" = %s;
     """
 
-    SELECT_NUM_FINGERPRINTS = f'SELECT COUNT(*) AS n FROM "{FINGERPRINTS_TABLENAME}";'
+    SELECT_NUM_FINGERPRINTS = f'SELECT COUNT(*) AS n FROM "{SCHEMA}"."{FINGERPRINTS_TABLENAME}";'
 
     SELECT_UNIQUE_SONG_IDS = f"""
         SELECT COUNT("{FIELD_SONG_ID}") AS n
-        FROM "{SONGS_TABLENAME}"
+        FROM "{SCHEMA}"."{SONGS_TABLENAME}"
         WHERE "{FIELD_FINGERPRINTED}" = 1;
     """
 
@@ -104,17 +105,17 @@ class CockroachdbSQLDatabase(CommonDatabase):
         ,   upper(encode("{FIELD_FILE_SHA1}", 'hex')) AS "{FIELD_FILE_SHA1}"
         ,   "{FIELD_TOTAL_HASHES}"
         ,   "date_created"
-        FROM "{SONGS_TABLENAME}"
+        FROM "{SCHEMA}"."{SONGS_TABLENAME}"
         WHERE "{FIELD_FINGERPRINTED}" = 1;
     """
 
     # DROPS
-    DROP_FINGERPRINTS = F'DROP TABLE IF EXISTS "{FINGERPRINTS_TABLENAME}";'
-    DROP_SONGS = F'DROP TABLE IF EXISTS "{SONGS_TABLENAME}";'
+    DROP_FINGERPRINTS = F'DROP TABLE IF EXISTS "{SCHEMA}"."{FINGERPRINTS_TABLENAME}";'
+    DROP_SONGS = F'DROP TABLE IF EXISTS "{SCHEMA}"."{SONGS_TABLENAME}";'
 
     # UPDATE
     UPDATE_SONG_FINGERPRINTED = f"""
-        UPDATE "{SONGS_TABLENAME}" SET
+        UPDATE "{SCHEMA}"."{SONGS_TABLENAME}" SET
             "{FIELD_FINGERPRINTED}" = 1
         ,   "date_modified" = now()
         WHERE "{FIELD_SONG_ID}" = %s;
@@ -122,11 +123,11 @@ class CockroachdbSQLDatabase(CommonDatabase):
 
     # DELETES
     DELETE_UNFINGERPRINTED = f"""
-        DELETE FROM "{SONGS_TABLENAME}" WHERE "{FIELD_FINGERPRINTED}" = 0;
+        DELETE FROM "{SCHEMA}"."{SONGS_TABLENAME}" WHERE "{FIELD_FINGERPRINTED}" = 0;
     """
 
     DELETE_SONGS = f"""
-        DELETE FROM "{SONGS_TABLENAME}" WHERE "{FIELD_SONG_ID}" IN (%s);
+        DELETE FROM "{SCHEMA}"."{SONGS_TABLENAME}" WHERE "{FIELD_SONG_ID}" IN (%s);
     """
 
     # IN
@@ -155,6 +156,24 @@ class CockroachdbSQLDatabase(CommonDatabase):
         with self.cursor() as cur:
             cur.execute(self.INSERT_SONG, (song_name, file_hash, total_hashes,type))
             return cur.fetchone()[0]
+
+    def insert_hashes(self, song_id: int, hashes: List[Tuple[str, int]], batch_size: int = 10) -> None:
+        """
+        Insert a multitude of fingerprints.
+        :param song_id: Song identifier the fingerprints belong to
+        :param hashes: A sequence of tuples in the format (hash, offset)
+            - hash: Part of a sha1 hash, in hexadecimal format
+            - offset: Offset this hash was created from/at.
+        :param batch_size: insert batches.
+        """
+        values = [(song_id, hsh, int(offset)) for hsh, offset in hashes]
+        # execute_values is way faster than executemany like 60x faster
+        # https://stackoverflow.com/questions/8134602/psycopg2-insert-multiple-rows-with-one-query
+        with self.cursor() as cur:
+            # start = time()
+            print("Inserting %s hashes into song_id: %d", len(values), song_id)
+            execute_values(cur, self.INSERT_FINGERPRINT, values, template="(%s, decode(%s, 'hex'), %s)")
+            # print(f"Inserted {len(values)} hashes in {time() - start} seconds.")
 
     def __getstate__(self):
         return self._options,

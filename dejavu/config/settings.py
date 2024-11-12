@@ -32,6 +32,8 @@ DATABASES = {
     'cockroach': ("dejavu.database_handler.cockroach_database", "CockroachdbSQLDatabase")
 }
 
+SCHEMA = "dejavu"
+
 # TABLE SONGS
 SONGS_TABLENAME = "songs"
 
